@@ -1,0 +1,191 @@
+/*!
+ * Bullet List Outline Plugin - Styles
+ * Copyright (c) 2026 [yyldps]
+ * Licensed under the MIT License
+ */
+ 
+/* ==========================================================
+   0. 全局颜色控制台 (发光色)
+   ========================================================== */
+body.theme-light {
+    --my-glow-color: #007aff; 
+    --my-glow-shadow: 0 0 6px 1px rgba(0, 122, 255, 0.4);
+}
+body.theme-dark {
+    --my-glow-color: #ffffff; 
+    --my-glow-shadow: 0 0 8px 1.5px rgba(255, 255, 255, 0.65);
+}
+
+
+/* ==========================================================
+   PART A: 侧边栏大纲
+   ========================================================== */
+.list-outline-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    font-size: 1.15em; font-weight: 600; color: var(--text-normal);
+    padding: 12px 16px; margin: 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+    backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10;
+}
+
+.outline-root-container { padding-top: 8px; padding-bottom: 16px; }
+
+.outline-row {
+    display: flex; 
+    align-items: flex-start; /* 应对长文本折行，保持顶部对齐 */
+    padding: 4px 8px; 
+    cursor: pointer; color: var(--text-muted); font-size: 0.95em;
+    line-height: 1.5; transition: background-color 0.15s ease;
+    user-select: none; border-radius: 6px; margin: 1px 8px;
+}
+.outline-row:hover { background-color: var(--background-modifier-hover); }
+
+.outline-caret {
+    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    margin-right: 2px; margin-top: 2px; 
+    margin-left: -4.8px; 
+    flex-shrink: 0; opacity: 0.3;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.outline-row:hover .outline-caret { opacity: 0.8; }
+
+.outline-bullet {
+    width: 0.45em; height: 0.45em; border-radius: 50%; 
+    background-color: var(--text-faint); margin-right: 8px;
+    margin-top: 0.45em; /* 绝对对齐第一行文本的视觉中心 */
+    flex-shrink: 0; transition: all 0.2s ease;
+}
+.outline-row.is-active .outline-bullet {
+    background-color: var(--my-glow-color) !important;
+    box-shadow: var(--my-glow-shadow) !important; 
+}
+.outline-row.is-active .outline-text { color: var(--text-normal); font-weight: 500; }
+.outline-text { flex-grow: 1; word-break: break-all; }
+
+.outline-children {
+    margin-left: 20px; border-left: 1px solid var(--background-modifier-border); padding-left: 4px; 
+}
+.outline-badge {
+    color: var(--text-faint); font-size: 0.75em; font-family: "SF Pro Rounded", -apple-system, sans-serif;
+    padding: 0 6px; margin-left: 8px; align-self: center; flex-shrink: 0;
+    border-radius: 10px; background: transparent; border: 1px solid var(--background-modifier-border);
+}
+
+
+/* ==========================================================
+   PART B: 正文排版
+   ========================================================== */
+.cm-line.HyperMD-list-line, 
+.markdown-rendered ul li {
+  transition: font-size 0.2s ease, font-weight 0.2s ease, color 0.2s ease !important;
+}
+
+/* --- 第一级 H1 --- */
+/* 1. 赋予纯文本大小、粗细和颜色 */
+.cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-2) > span:not(.cm-formatting):not(.cm-hmd-list-indent),
+.cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
+  font-size: var(--h1, 1.6em) !important; font-weight: var(--h1-weight, 700) !important; color: var(--h1-color, var(--text-title-h1)) !important;
+}
+/* 2. 圆点容器同步放大，绝对不碰颜色以杜绝自带无序符号显形 */
+.cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-2) .list-bullet,
+.cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .list-bullet,
+.cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-2) .cm-fold-indicator,
+.cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .cm-fold-indicator {
+  font-size: var(--h1, 1.6em) !important;
+}
+
+/* --- 第二级 H2 --- */
+.cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-3) > span:not(.cm-formatting):not(.cm-hmd-list-indent),
+.cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
+  font-size: var(--h2, 1.35em) !important; font-weight: var(--h2-weight, 700) !important; color: var(--h2-color, var(--text-title-h2)) !important;
+}
+.cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-3) .list-bullet,
+.cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .list-bullet,
+.cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-3) .cm-fold-indicator,
+.cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .cm-fold-indicator {
+  font-size: var(--h2, 1.35em) !important;
+}
+
+/* --- 第三级 H3 --- */
+.cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-4) > span:not(.cm-formatting):not(.cm-hmd-list-indent),
+.cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
+  font-size: var(--h3, 1.2em) !important; font-weight: var(--h3-weight, 600) !important; color: var(--h3-color, var(--text-title-h3)) !important;
+}
+.cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-4) .list-bullet,
+.cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .list-bullet,
+.cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-4) .cm-fold-indicator,
+.cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .cm-fold-indicator {
+  font-size: var(--h3, 1.2em) !important;
+}
+
+
+/* ==========================================================
+   PART C: 完美的绝对居中引擎
+   ========================================================== */
+
+.markdown-source-view.mod-cm6 .cm-line .list-bullet {
+    color: transparent !important; 
+    background: transparent !important;
+    position: relative !important;
+    display: inline-block !important; 
+    width: 1em !important; 
+    height: 1em !important;
+    margin-left: 11.1px !important;
+    /* 彻底清除容器上的对齐属性，防止和 Obsidian 引擎打架 */
+
+}
+
+/* 核心破局点：直接控制画出来的圆点本体！ */
+.markdown-source-view.mod-cm6 .cm-line .list-bullet::after {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 75% !important; /* 精准下压，完美契合当前字体的视觉重心 */
+    transform: translate(-50%, -50%) !important; 
+    width: 0.45em !important;  
+    height: 0.45em !important;      
+    border-radius: 50% !important; 
+    background-color: var(--text-faint) !important; 
+    border: none !important;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* 折叠小箭头悬浮对齐 */
+.markdown-source-view.mod-cm6 .cm-line .cm-fold-indicator {
+    position: absolute !important;
+    display: inline-flex !important;
+    margin-left: 0.4em !important; /* 水平贴合圆点 */
+    margin-top: 1px !important;    /* 垂直辅助线完美对齐 */
+    width: auto !important;
+    padding: 0 !important;
+    opacity: 0.3;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateX(11.1px) !important;
+}
+
+/* 悬浮时稍微亮起 */
+.markdown-source-view.mod-cm6 .cm-line .cm-fold-indicator:hover {
+    opacity: 1;
+    transform: translateX(11.1px) scale(1.1) !important;
+}
+
+/* ==========================================================
+   PART D: 动态高亮
+   ========================================================== */
+
+/* 正文圆点激活态 */
+.markdown-source-view.mod-cm6 .cm-line.cm-active .list-bullet::after {
+    background-color: var(--my-glow-color) !important; 
+    box-shadow: var(--my-glow-shadow) !important; 
+}
+
+/* 箭头激活态同步发光 */
+.cm-active ~ .cm-gutter-fold .cm-fold-indicator svg,
+.cm-line.cm-active .collapse-indicator svg,
+.cm-line.cm-active .cm-fold-indicator svg {
+    color: var(--my-glow-color) !important;
+    fill: var(--my-glow-color) !important;
+    filter: drop-shadow(var(--my-glow-shadow)) !important;
+    opacity: 1 !important; 
+}
