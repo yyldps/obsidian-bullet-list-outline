@@ -1,9 +1,0 @@
-{
-  "id": "bullet-list-outline",
-  "name": "Bullet List Outline",
-  "version": "1.0.1",
-  "minAppVersion": "1.0.1",
-  "description": "Generate a dedicated sidebar outline for bullet lists.",
-  "author": "yyldps",
-  "isDesktopOnly": false
-}
