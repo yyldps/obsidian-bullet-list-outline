@@ -23,6 +23,7 @@ A simple sidebar outline plugin for Obsidian. It provides a tree-view outline fo
 * **Display Adjustments**: Added custom color options for the light theme and the ability to truncate heading display lengths.
 
 ### Core Features
+* list-outline-mode：To enable List Outline Mode, simply add cssclasses: list-outline-mode to the YAML frontmatter at the top of your note.
 * Automatically tracks the cursor and highlights the corresponding item in the outline.
 * Clicking an outline item scrolls the editor to the target line.
 * Preserves and renders WikiLinks, Markdown links, and tags within the outline.
@@ -54,6 +55,7 @@ A simple sidebar outline plugin for Obsidian. It provides a tree-view outline fo
 
 一款 Obsidian 侧边栏大纲插件，支持显示无序列表、正文标题以及白板（Canvas）的结构化大纲。
 
+
 ### 近期更新
 * **模式开关**：支持通过文档属性（Properties）直接开启或关闭列表大纲模式。
 * **大纲切换**：侧边栏自动跟随当前文档适配，目前支持标题大纲、列表大纲和白板大纲。
@@ -62,6 +64,7 @@ A simple sidebar outline plugin for Obsidian. It provides a tree-view outline fo
 * **显示优化**：支持在明亮模式下自定义外观颜色，并支持自定义或限制标题的显示长度。
 
 ### 核心功能
+* 列表大纲模式，只需在笔记顶部的 YAML 属性区添加 cssclasses: list-outline-mode 即可。
 * 自动跟随光标位置，在侧边栏高亮当前所在的列表或标题节点。
 * 点击大纲节点，正文可直接定位并滚动至对应行。
 * 支持解析并渲染大纲中的双链（WikiLinks）、Markdown 链接与标签。
