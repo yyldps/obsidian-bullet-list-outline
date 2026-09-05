@@ -24,47 +24,38 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 var VIEW_TYPE_UNIFIED_OUTLINE = "unified-outline-view";
+var LOCALE = window.moment.locale();
+var isZh = LOCALE === "zh-cn" || LOCALE === "zh-tw" || LOCALE === "zh";
 var t = {
-  behavior: "Behavior",
-  defaultExpand: "Default expand level",
-  defaultExpandDesc: "Set the default depth when opening a new outline.",
-  appearance: "Appearance",
-  showChildCount: "Show child count badges",
-  showChildCountDesc: "Display the number of descendant items next to parent nodes.",
-  truncate: "Truncate text length",
-  truncateDesc: "Maximum characters to display for long items. Set to 0 to disable.",
-  lightColor: "Light theme glow color",
-  lightColorDesc: "Custom glow color for the active item in light theme.",
-  darkColor: "Dark theme glow color",
-  darkColorDesc: "Custom glow color for the active item in dark theme.",
-  level: (num) => `Level ${num}`,
+  behavior: isZh ? "行为设置" : "Behavior",
+  defaultExpand: isZh ? "默认展开层级" : "Default expand level",
+  defaultExpandDesc: isZh ? "打开新大纲时默认展示的深度。" : "Set the default depth when opening a new outline.",
+  appearance: isZh ? "外观与排版" : "Appearance",
+  showChildCount: isZh ? "显示子节点数量" : "Show child count badges",
+  showChildCountDesc: isZh ? "在父节点旁边显示包含的子节点总数。" : "Display the number of descendant items next to parent nodes.",
+  truncate: isZh ? "文本截断长度" : "Truncate text length",
+  truncateDesc: isZh ? "过长标题的自动省略字符数（填 0 关闭限制）。" : "Maximum characters to display for long items. Set to 0 to disable.",
+  lightColor: isZh ? "白天模式高亮色" : "Light theme glow color",
+  lightColorDesc: isZh ? "自定义浅色主题下当前编辑节点的发光颜色。" : "Custom glow color for the active item in light theme.",
+  darkColor: isZh ? "夜间模式高亮色" : "Dark theme glow color",
+  darkColorDesc: isZh ? "自定义深色主题下当前编辑节点的发光颜色。" : "Custom glow color for the active item in dark theme.",
+  level: (num) => isZh ? `展开至层级 ${num}` : `Level ${num}`,
   all: "All",
-  emptyState: "No active document",
-  outlineTitle: "Outline"
+  emptyState: isZh ? "暂无激活的文档或白板" : "No active document or canvas",
+  outlineTitle: isZh ? "结构大纲" : "Outline"
 };
 var DEFAULT_SETTINGS = {
   defaultExpandLevel: 99,
   truncateLength: 30,
   showChildCount: true,
   lightGlowColor: "#007aff",
-  darkGlowColor: "#ffffff",
-  // 侧边栏布局参数（已无设置面板，但保留默认值供CSS读取）
-  sbCaretSize: 18,
-  sbBulletSize: 0.45,
-  sbBulletMarginLeft: 0.475,
-  sbBulletMarginRight: 0.875,
-  sbCheckboxSize: 0.8,
-  sbCheckboxMarginLeft: 0.3,
-  sbCheckboxMarginRight: 0.7
+  darkGlowColor: "#ffffff"
 };
 var UnifiedOutlinePlugin = class extends import_obsidian.Plugin {
   async onload() {
     await this.loadSettings();
     this.applyCustomColors();
-    this.registerView(
-      VIEW_TYPE_UNIFIED_OUTLINE,
-      (leaf) => new UnifiedOutlineView(leaf, this)
-    );
+    this.registerView(VIEW_TYPE_UNIFIED_OUTLINE, (leaf) => new UnifiedOutlineView(leaf, this));
     this.addRibbonIcon("list-tree", t.outlineTitle, () => this.activateView());
     this.addSettingTab(new UnifiedOutlineSettingTab(this.app, this));
   }
@@ -91,22 +82,11 @@ var UnifiedOutlinePlugin = class extends import_obsidian.Plugin {
     styleEl.textContent = `
             html body.theme-light, body.theme-light {
                 --my-glow-color: ${this.settings.lightGlowColor};
-                --my-glow-color-rgb: ${lightRgb};
-                --my-glow-shadow: 0 0 2px rgba(${lightRgb}, 0.2), 0 0 6px 1px rgba(${lightRgb}, 0.4);
+                --my-glow-shadow: 0 0 6px 1px rgba(${lightRgb}, 0.4);
             }
             html body.theme-dark, body.theme-dark {
                 --my-glow-color: ${this.settings.darkGlowColor};
-                --my-glow-color-rgb: ${darkRgb};
-                --my-glow-shadow: 0 0 2px rgba(${darkRgb}, 0.4), 0 0 8px 1.5px rgba(${darkRgb}, 0.65);
-            }
-            html body .app-container .workspace-leaf-content[data-type="unified-outline-view"] {
-                --sb-caret-size: ${this.settings.sbCaretSize}px;
-                --sb-bullet-size: ${this.settings.sbBulletSize}em;
-                --sb-bullet-margin-left: ${this.settings.sbBulletMarginLeft}em;
-                --sb-bullet-margin-right: ${this.settings.sbBulletMarginRight}em;
-                --sb-checkbox-size: ${this.settings.sbCheckboxSize}em;
-                --sb-checkbox-margin-left: ${this.settings.sbCheckboxMarginLeft}em;
-                --sb-checkbox-margin-right: ${this.settings.sbCheckboxMarginRight}em;
+                --my-glow-shadow: 0 0 8px 1.5px rgba(${darkRgb}, 0.65);
             }
         `;
   }
@@ -136,6 +116,18 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
     this.plugin = plugin;
     this.currentExpandLevel = this.plugin.settings.defaultExpandLevel;
     this.suppressNextUpdate = false;
+    this.canvasEventRefs = [];
+    this.currentCanvas = null;
+    this._updating = false;
+    this._refreshTimer = null;
+    this._pollingTimer = null;
+    this._pollingFile = null;
+    this._lastDataHash = "";
+    this._pollingInterval = 500;
+    this._canvasRetryTimer = null;
+    this._canvasRetryCount = 0;
+    this._activeFileRecheckTimer = null;
+    this._activeFileRecheckCount = 0;
   }
   getViewType() {
     return VIEW_TYPE_UNIFIED_OUTLINE;
@@ -167,37 +159,149 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
         debouncedUpdate();
     }));
     this.registerDomEvent(document, "selectionchange", debouncedHighlight);
-    
-    // 完全回归原生，不干预正文折叠逻辑
     await this.updateView();
   }
+  onClose() {
+    this.stopPolling();
+    this.unregisterCanvasEvents();
+  }
+  // ---------- 核心更新入口 ----------
   async updateView() {
-    var _a, _b;
-    const container = this.contentEl;
-    container.empty();
-    const activeFile = this.app.workspace.getActiveFile();
-    if (!activeFile) {
+    if (this._updating) return;
+    this._updating = true;
+    try {
+      var _a, _b;
+      const container = this.contentEl;
+      const activeFile = this.app.workspace.getActiveFile();
+
+      // ---- 完全跟随当前活动文件 ----
+      if (!activeFile) {
+        if (this._pollingFile) {
+          this.scheduleActiveFileRecheck();
+          return;
+        }
+        this.stopPolling();
+        this.unregisterCanvasEvents();
+        container.empty();
+        container.createDiv({ text: t.emptyState, cls: "outline-empty-state" });
+        return;
+      }
+      this._activeFileRecheckCount = 0;
+      if (activeFile.extension === "canvas") {
+        await this.renderCanvasOutline(activeFile, container);
+        this.startPolling(activeFile);
+      } else if (activeFile.extension === "md") {
+        this.stopPolling();
+        this.unregisterCanvasEvents();
+        container.empty();
+        const cache = this.app.metadataCache.getFileCache(activeFile);
+        const cssClasses = (_b = (_a = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _a.cssclasses) != null ? _b : [];
+        const isListMode = Array.isArray(cssClasses) ? cssClasses.includes("list-outline-mode") : typeof cssClasses === "string" && cssClasses.includes("list-outline-mode");
+        if (isListMode) {
+          await this.renderListOutline(activeFile, container);
+        } else {
+          await this.renderHeadingOutline(activeFile, cache || {}, container);
+        }
+      } else {
+        // 其他文件类型清空
+        this.stopPolling();
+        this.unregisterCanvasEvents();
+        container.empty();
+        container.createDiv({ text: t.emptyState, cls: "outline-empty-state" });
+      }
+    } finally {
+      this._updating = false;
+    }
+  }
+  // ---------- 轮询机制 ----------
+  startPolling(file) {
+    if (!file) return;
+    if (this._pollingTimer && this._pollingFile === file.path) return;
+    if (this._pollingTimer) {
+      clearInterval(this._pollingTimer);
+      this._pollingTimer = null;
+    }
+    this._pollingFile = file.path;
+    this._pollingTimer = setInterval(() => {
+      const activeFile = this.app.workspace.getActiveFile();
+      if (!activeFile || activeFile.path !== file.path) {
+        this.stopPolling();
+        return;
+      }
+      const view = this.app.workspace.getActiveViewOfType(import_obsidian.ItemView);
+      if (!view || view.getViewType() !== "canvas") return;
+      const canvas = view.canvas;
+      if (!canvas) return;
+      let hash;
+      try {
+        hash = this.hashData(canvas.getData());
+      } catch (e) {
+        return;
+      }
+      if (hash !== this._lastDataHash) {
+        this.updateView();
+      }
+    }, this._pollingInterval);
+  }
+  stopPolling() {
+    if (this._pollingTimer) {
+      clearInterval(this._pollingTimer);
+      this._pollingTimer = null;
+    }
+    this._pollingFile = null;
+    this._lastDataHash = "";
+    if (this._canvasRetryTimer) {
+      clearTimeout(this._canvasRetryTimer);
+      this._canvasRetryTimer = null;
+    }
+    if (this._activeFileRecheckTimer) {
+      clearTimeout(this._activeFileRecheckTimer);
+      this._activeFileRecheckTimer = null;
+    }
+  }
+  scheduleCanvasRetry(file) {
+    if (this._canvasRetryTimer) return;
+    this._canvasRetryCount = (this._canvasRetryCount || 0) + 1;
+    if (this._canvasRetryCount > 20) {
+      this._canvasRetryCount = 0;
+      return;
+    }
+    this._canvasRetryTimer = window.setTimeout(() => {
+      this._canvasRetryTimer = null;
+      const activeFile = this.app.workspace.getActiveFile();
+      if (activeFile && activeFile.extension === "canvas" && activeFile.path === file.path) {
+        this.updateView();
+      }
+    }, 150);
+  }
+  scheduleActiveFileRecheck() {
+    if (this._activeFileRecheckTimer) return;
+    this._activeFileRecheckCount = (this._activeFileRecheckCount || 0) + 1;
+    if (this._activeFileRecheckCount > 6) {
+      this._activeFileRecheckCount = 0;
+      this.stopPolling();
+      this.unregisterCanvasEvents();
+      const container = this.contentEl;
+      container.empty();
       container.createDiv({ text: t.emptyState, cls: "outline-empty-state" });
       return;
     }
-    try {
-        if (activeFile.extension === "canvas") {
-          await this.renderCanvasOutline(activeFile, container);
-        } else if (activeFile.extension === "md") {
-          const cache = this.app.metadataCache.getFileCache(activeFile);
-          const cssClasses = (_b = (_a = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _a.cssclasses) != null ? _b : [];
-          const isListMode = Array.isArray(cssClasses) ? cssClasses.includes("list-outline-mode") : typeof cssClasses === "string" && cssClasses.includes("list-outline-mode");
-          if (isListMode) {
-            await this.renderListOutline(activeFile, container);
-          } else {
-            await this.renderHeadingOutline(activeFile, cache || {}, container);
-          }
-        }
-    } catch (e) {
-        console.error("Unified Outline Render Error:", e);
-        container.createDiv({ text: "Error rendering outline", cls: "outline-empty-state" });
-    }
+    this._activeFileRecheckTimer = window.setTimeout(() => {
+      this._activeFileRecheckTimer = null;
+      this.updateView();
+    }, 120);
   }
+  hashData(data) {
+    const json = JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < json.length; i++) {
+      const char = json.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return hash + json.length;
+  }
+  // ---------- 工具方法 ----------
   truncateText(text) {
     const max = this.plugin.settings.truncateLength;
     return max > 0 && text.length > max ? text.substring(0, max) + "..." : text;
@@ -239,6 +343,7 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
     container.querySelectorAll(".segmented-btn").forEach((el) => el.classList.remove("is-active"));
     activeBtn.classList.add("is-active");
   }
+  // ---------- 标题大纲 ----------
   async renderHeadingOutline(file, cache, container) {
     const view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
     if (!view)
@@ -280,8 +385,9 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
     if (hasChildren) {
       (0, import_obsidian.setIcon)(caret, "chevron-down");
       caret.addEventListener("click", (e) => this.toggleCollapse(e, nodeContainer, caret));
-    } else
+    } else {
       caret.addClass("is-empty");
+    }
     const displayText = this.truncateText(node.heading.heading);
     row.createDiv({ cls: "outline-text heading-text", text: displayText });
     if (hasChildren && this.plugin.settings.showChildCount) {
@@ -294,21 +400,190 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
         this.renderHeadingNode(child, childrenContainer, view);
     }
   }
+  // ---------- 白板大纲 ----------
   async renderCanvasOutline(file, container) {
-    container.createDiv({ text: "Canvas outline not supported yet.", cls: "outline-empty-state" });
-  }
-  async renderListOutline(file, container) {
-    let view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
-    if (!view) {
-        const leaves = this.app.workspace.getLeavesOfType('markdown');
-        if (leaves.length > 0) {
-            view = leaves[0].view;
-        }
-    }
-    if (!view) {
-      container.createDiv({ text: "No active Markdown editor found", cls: "outline-empty-state" });
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian.ItemView);
+    if (!view || view.getViewType() !== "canvas") {
+      this.scheduleCanvasRetry(file);
       return;
     }
+    const canvas = view.canvas;
+    if (!canvas) {
+      this.scheduleCanvasRetry(file);
+      return;
+    }
+    if (this.currentCanvas !== canvas) {
+      this.unregisterCanvasEvents();
+      this.currentCanvas = canvas;
+      this.registerCanvasEvents(canvas);
+    }
+    let canvasData, nodes, tree;
+    try {
+      canvasData = canvas.getData();
+      nodes = canvasData.nodes || [];
+      tree = this.buildCanvasTree(nodes);
+    } catch (err) {
+      console.error("[统一大纲] 读取白板数据失败，将自动重试：", err);
+      this.scheduleCanvasRetry(file);
+      return;
+    }
+    this._canvasRetryCount = 0;
+    this._lastDataHash = this.hashData(canvasData);
+    container.empty();
+    this.renderHeaderControls(container, file.basename, null);
+    if (nodes.length === 0) {
+      container.createDiv({ text: t.emptyState, cls: "outline-empty-state" });
+      return;
+    }
+    const rootContainer = container.createDiv({ cls: "outline-root-container canvas-outline canvas-mode" });
+    try {
+      for (const rootNode of tree)
+        this.renderCanvasNode(rootNode, rootContainer, canvas, 1);
+      this.expandToLevel(this.currentExpandLevel);
+    } catch (err) {
+      console.error("[统一大纲] 渲染白板大纲失败，将自动重试：", err);
+      this.scheduleCanvasRetry(file);
+    }
+  }
+  buildCanvasTree(nodes) {
+    const groups = nodes.filter((n) => n.type === "group");
+    groups.sort((a, b) => a.width * a.height - b.width * b.height);
+    const treeNodes = nodes.map((n) => ({ data: n, children: [] }));
+    const nodeMap = new Map(treeNodes.map((tn) => [tn.data.id, tn]));
+    const findParentGroup = (node) => {
+      const cx = node.x + node.width / 2, cy = node.y + node.height / 2;
+      for (const g of groups) {
+        if (g.id === node.id)
+          continue;
+        if (cx >= g.x && cx <= g.x + g.width && cy >= g.y && cy <= g.y + g.height)
+          return g;
+      }
+      return null;
+    };
+    const parentId = /* @__PURE__ */ new Map();
+    for (const tn of treeNodes) {
+      const parent = findParentGroup(tn.data);
+      if (parent && nodeMap.has(parent.id))
+        parentId.set(tn.data.id, parent.id);
+    }
+    const isCyclic = (startId) => {
+      const seen = /* @__PURE__ */ new Set([startId]);
+      let cur = startId;
+      while (parentId.has(cur)) {
+        cur = parentId.get(cur);
+        if (seen.has(cur)) return true;
+        seen.add(cur);
+      }
+      return false;
+    };
+    const rootNodes = [];
+    for (const tn of treeNodes) {
+      const pid = parentId.get(tn.data.id);
+      if (pid !== void 0 && !isCyclic(tn.data.id)) {
+        nodeMap.get(pid).children.push(tn);
+      } else {
+        rootNodes.push(tn);
+      }
+    }
+    return rootNodes.sort((a, b) => a.data.type === "group" ? -1 : 1);
+  }
+  countCanvasDescendants(node) {
+    return node.children.reduce((acc, child) => acc + this.countCanvasDescendants(child), node.children.length);
+  }
+  renderCanvasNode(treeNode, parentEl, canvas, depth) {
+    const nodeData = treeNode.data;
+    const nodeContainer = parentEl.createDiv({ cls: "outline-node", attr: { "data-level": depth.toString() } });
+    const row = nodeContainer.createDiv({ cls: "outline-row canvas-row" });
+    const hasChildren = treeNode.children.length > 0;
+    const caret = row.createDiv({ cls: "outline-caret" });
+    if (hasChildren) {
+      (0, import_obsidian.setIcon)(caret, "chevron-down");
+      caret.addEventListener("click", (e) => this.toggleCollapse(e, nodeContainer, caret));
+    } else {
+      caret.addClass("is-empty");
+    }
+    const iconEl = row.createDiv({ cls: "canvas-icon" });
+    let rawLabel = "Untitled";
+    if (nodeData.type === "group") {
+      (0, import_obsidian.setIcon)(iconEl, "box-select");
+      rawLabel = nodeData.label || "Group";
+      row.addClass("is-canvas-group");
+    } else if (nodeData.type === "file") {
+      (0, import_obsidian.setIcon)(iconEl, "file-text");
+      rawLabel = nodeData.file ? nodeData.file.split(/[/\\]/).pop() || "File" : "File";
+    } else if (nodeData.type === "text") {
+      (0, import_obsidian.setIcon)(iconEl, "type");
+      rawLabel = nodeData.text ? nodeData.text.split("\n")[0] : "Empty text";
+    } else if (nodeData.type === "link") {
+      (0, import_obsidian.setIcon)(iconEl, "link");
+      rawLabel = nodeData.url || "Link";
+    }
+    const displayLabel = this.truncateText(rawLabel);
+    row.createDiv({ cls: "outline-text canvas-text", text: displayLabel });
+    if (hasChildren && this.plugin.settings.showChildCount) {
+      row.createDiv({ cls: "outline-badge", text: this.countCanvasDescendants(treeNode).toString() });
+    }
+    row.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetCanvasNode = canvas.nodes.get(nodeData.id);
+      if (targetCanvasNode) {
+        canvas.deselectAll();
+        canvas.select(targetCanvasNode);
+        canvas.zoomToSelection();
+        this.contentEl.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"));
+        row.classList.add("is-active");
+      }
+    });
+    if (hasChildren) {
+      const childrenContainer = nodeContainer.createDiv({ cls: "outline-children" });
+      for (const child of treeNode.children)
+        this.renderCanvasNode(child, childrenContainer, canvas, depth + 1);
+    }
+  }
+  // ---------- 事件监听 ----------
+  registerCanvasEvents(canvas) {
+    if (!canvas) return;
+    const refresh = () => {
+      let hash;
+      try {
+        hash = this.hashData(canvas.getData());
+      } catch (e) {
+        return;
+      }
+      if (hash !== this._lastDataHash) {
+        this.updateView();
+      }
+    };
+    const eventNames = [
+      'change', 'modified', 'update',
+      'node-change', 'edge-change',
+      'node:change', 'edge:change',
+      'node-data-change', 'edge-data-change',
+      'data-change'
+    ];
+    for (const name of eventNames) {
+      try {
+        const ref = canvas.on(name, refresh);
+        this.canvasEventRefs.push(ref);
+      } catch (e) {}
+    }
+  }
+  unregisterCanvasEvents() {
+    if (this.currentCanvas && this.canvasEventRefs.length) {
+      for (const ref of this.canvasEventRefs) {
+        try {
+          this.currentCanvas.off(ref);
+        } catch (e) {}
+      }
+    }
+    this.canvasEventRefs = [];
+    this.currentCanvas = null;
+  }
+  // ---------- 列表大纲 ----------
+  async renderListOutline(file, container) {
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
+    if (!view)
+      return;
     this.renderHeaderControls(container, file.basename, view);
     const rootContainer = container.createDiv({ cls: "outline-root-container list-mode" });
     const lines = view.editor.getValue().split("\n");
@@ -353,20 +628,10 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
     const nodeContainer = parentEl.createDiv({ cls: "outline-node", attr: { "data-level": depth.toString() } });
     const hasChildren = node.children.length > 0;
     const safeDepth = Math.min(depth, 6);
-    let displayText = node.text;
-    let isTask = false;
-    let taskChecked = false;
-    const taskMatch = displayText.match(/^\[([ xX])\]\s+(.*)/);
-    if (taskMatch) {
-      isTask = true;
-      taskChecked = taskMatch[1] !== " ";
-      displayText = taskMatch[2];
-    }
     let rowClasses = "outline-row list-row";
-    if (hasChildren)
+    if (hasChildren) {
       rowClasses += ` list-heading-depth-${safeDepth}`;
-    if (isTask && taskChecked)
-      rowClasses += " is-completed";
+    }
     const row = nodeContainer.createDiv({ cls: rowClasses });
     row.setAttribute("data-line", node.line.toString());
     const caret = row.createDiv({ cls: "outline-caret" });
@@ -376,13 +641,22 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
     } else {
       caret.addClass("is-empty");
     }
+    let isTask = false;
+    let taskChecked = false;
+    let displayText = node.text;
+    const taskMatch = displayText.match(/^\[([ xX])\]\s+(.*)/);
+    if (taskMatch) {
+      isTask = true;
+      taskChecked = taskMatch[1] !== " ";
+      displayText = taskMatch[2];
+    }
     if (isTask) {
       const cb = row.createEl("input", { type: "checkbox", cls: "outline-task-checkbox" });
       cb.checked = taskChecked;
+      if (taskChecked) row.addClass("is-completed");
       cb.addEventListener("click", (e) => {
         e.stopPropagation();
         const isChecked = cb.checked;
-        node.taskChecked = isChecked;
         if (isChecked) {
           row.addClass("is-completed");
         } else {
@@ -425,6 +699,7 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
   countDescendants(node) {
     return node.children.reduce((acc, child) => acc + this.countDescendants(child), node.children.length);
   }
+  // ---------- 展开/折叠/跳转/高亮 ----------
   expandToLevel(targetLevel) {
     const nodes = this.contentEl.querySelectorAll(".outline-node");
     nodes.forEach((node) => {
@@ -468,13 +743,7 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
   }
   highlightActiveLine() {
     var _a, _b;
-    let activeView = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
-    if (!activeView) {
-        const leaves = this.app.workspace.getLeavesOfType('markdown');
-        if (leaves.length > 0) {
-            activeView = leaves[0].view;
-        }
-    }
+    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian.MarkdownView);
     if (!activeView)
       return;
     const cursorLine = activeView.editor.getCursor().line;
@@ -509,6 +778,7 @@ var UnifiedOutlineView = class extends import_obsidian.ItemView {
     }
   }
 };
+// ---------- 设置面板 ----------
 var UnifiedOutlineSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -518,42 +788,31 @@ var UnifiedOutlineSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     new import_obsidian.Setting(containerEl).setHeading().setName(t.behavior);
-    new import_obsidian.Setting(containerEl).setName(t.defaultExpand).setDesc(t.defaultExpandDesc).addDropdown(
-      (d) => d.addOption("1", t.level("1")).addOption("2", t.level("2")).addOption("3", t.level("3")).addOption("4", t.level("4")).addOption("5", t.level("5")).addOption("6", t.level("6")).addOption("99", t.all).setValue(this.plugin.settings.defaultExpandLevel.toString()).onChange(async (v) => {
-        this.plugin.settings.defaultExpandLevel = parseInt(v, 10);
-        await this.plugin.saveSettings();
-      })
-    );
+    new import_obsidian.Setting(containerEl).setName(t.defaultExpand).setDesc(t.defaultExpandDesc).addDropdown((d) => d.addOption("1", t.level("1")).addOption("2", t.level("2")).addOption("3", t.level("3")).addOption("4", t.level("4")).addOption("5", t.level("5")).addOption("6", t.level("6")).addOption("99", t.all).setValue(this.plugin.settings.defaultExpandLevel.toString()).onChange(async (v) => {
+      this.plugin.settings.defaultExpandLevel = parseInt(v, 10);
+      await this.plugin.saveSettings();
+    }));
     new import_obsidian.Setting(containerEl).setHeading().setName(t.appearance);
-    new import_obsidian.Setting(containerEl).setName(t.lightColor).setDesc(t.lightColorDesc).addColorPicker(
-      (color) => color.setValue(this.plugin.settings.lightGlowColor).onChange(async (value) => {
-        this.plugin.settings.lightGlowColor = value;
-        this.plugin.applyCustomColors();
+    new import_obsidian.Setting(containerEl).setName(t.lightColor).setDesc(t.lightColorDesc).addColorPicker((color) => color.setValue(this.plugin.settings.lightGlowColor).onChange(async (value) => {
+      this.plugin.settings.lightGlowColor = value;
+      this.plugin.applyCustomColors();
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(t.darkColor).setDesc(t.darkColorDesc).addColorPicker((color) => color.setValue(this.plugin.settings.darkGlowColor).onChange(async (value) => {
+      this.plugin.settings.darkGlowColor = value;
+      this.plugin.applyCustomColors();
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(t.showChildCount).setDesc(t.showChildCountDesc).addToggle((t2) => t2.setValue(this.plugin.settings.showChildCount).onChange(async (v) => {
+      this.plugin.settings.showChildCount = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(t.truncate).setDesc(t.truncateDesc).addText((text) => text.setValue(this.plugin.settings.truncateLength.toString()).onChange(async (v) => {
+      const parsed = parseInt(v, 10);
+      if (!isNaN(parsed)) {
+        this.plugin.settings.truncateLength = parsed;
         await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName(t.darkColor).setDesc(t.darkColorDesc).addColorPicker(
-      (color) => color.setValue(this.plugin.settings.darkGlowColor).onChange(async (value) => {
-        this.plugin.settings.darkGlowColor = value;
-        this.plugin.applyCustomColors();
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName(t.showChildCount).setDesc(t.showChildCountDesc).addToggle(
-      (tToggle) => tToggle.setValue(this.plugin.settings.showChildCount).onChange(async (v) => {
-        this.plugin.settings.showChildCount = v;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian.Setting(containerEl).setName(t.truncate).setDesc(t.truncateDesc).addText(
-      (text) => text.setValue(this.plugin.settings.truncateLength.toString()).onChange(async (v) => {
-        const parsed = parseInt(v, 10);
-        if (!isNaN(parsed)) {
-          this.plugin.settings.truncateLength = parsed;
-          await this.plugin.saveSettings();
-        }
-      })
-    );
-    // 【已删除】侧边栏布局调整设置区（用户要求移除）
+      }
+    }));
   }
 };
