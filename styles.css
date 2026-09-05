@@ -316,3 +316,102 @@ html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.l
     content: ""; position: absolute; left: -14px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px;
     background-color: var(--my-glow-color, #007aff); box-shadow: 0 0 6px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.5); z-index: 1;
 }
+
+/* ---------- 🆕 白板大纲样式 ---------- */
+.outline-row.canvas-row {
+    align-items: center;
+    padding: 6px 8px;
+}
+.canvas-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.canvas-icon svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2px;
+}
+.outline-text.canvas-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-normal);
+}
+.outline-row.canvas-row.is-canvas-group .canvas-text {
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+/* 白板高亮发光 */
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.canvas-row.is-active .canvas-text,
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.canvas-row.is-active .canvas-icon {
+    color: var(--my-glow-color);
+    text-shadow: 0 0 5px rgba(var(--my-glow-color), 0.3);
+}
+
+/* ---------- 🆕 任务复选框样式（从旧版移植） ---------- */
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: var(--sb-checkbox-size, 0.8em);
+    height: var(--sb-checkbox-size, 0.8em);
+    border: 1.5px solid var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: transparent;
+    margin-right: 8px;
+    margin-top: -0.04em;
+    position: relative;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:checked {
+    background-color: transparent;
+    border-color: var(--text-faint);
+    box-shadow: none;
+}
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:checked::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 10%;
+    left: 25%;
+    width: 50%;
+    height: 65%;
+    border: solid var(--text-faint);
+    border-width: 0 0.12em 0.12em 0;
+    transform: rotate(45deg);
+    background-color: transparent;
+    -webkit-mask-image: none;
+    box-sizing: border-box;
+}
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-completed .outline-text {
+    text-decoration: none;
+    background-image: linear-gradient(to bottom, transparent 48%, var(--text-muted) 48%, var(--text-muted) 52%, transparent 52%);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: var(--text-muted);
+    opacity: 0.65;
+}
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:hover {
+    border-color: var(--text-normal);
+    transform: scale(1.08) translateY(-1px);
+}
+
+.outline-row.canvas-row .outline-caret {
+    left: 3px;   /* 自定义白板专用左右位置 */
+    top: 45%;    /* 自定义垂直位置 */
+}
+
+.outline-row.canvas-row {
+    padding-left: 20px;   /* 自定义白板专用缩进 */
+}
