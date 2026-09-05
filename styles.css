@@ -1,7 +1,11 @@
-/* CSS 动态注入部分已在 JS 内移除 !important，依赖 html body 的权重覆盖 */
+/*
+   ====================================================================
+   🎯 核心排版引擎基座 (无 !important，严格遵守官方 DOM 层叠规范)
+   ====================================================================
+*/
 
 /* ==========================================================
-   PART A: 侧边栏 UI 与组件交互
+   PART A: 侧边栏 UI 与大纲控制面板
    ========================================================== */
 .outline-header-container {
     position: sticky; top: 0; z-index: 10;
@@ -16,7 +20,6 @@
 }
 .outline-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
-/* 核心修复：防止控制按钮多语言换行，采用强约束排版 */
 .outline-segmented-control {
     display: flex; background: var(--background-modifier-form-field);
     border-radius: 6px; padding: 2px; flex-grow: 1; overflow: hidden; gap: 2px;
@@ -24,8 +27,7 @@
 .segmented-btn {
     flex: 1; text-align: center; font-size: var(--font-ui-smaller); font-weight: 500;
     color: var(--text-muted); padding: 4px 6px; cursor: pointer;
-    border-radius: 4px; transition: all 0.15s ease; user-select: none;
-    white-space: nowrap; /* 强制不换行 */
+    border-radius: 4px; transition: all 0.15s ease; user-select: none; white-space: nowrap; 
 }
 .segmented-btn:hover { color: var(--text-normal); }
 .segmented-btn.is-active {
@@ -43,150 +45,274 @@
 .outline-empty-state { color: var(--text-muted); text-align: center; padding: 24px; font-size: var(--font-ui-small); }
 .outline-root-container { padding-top: 8px; padding-bottom: 16px; }
 
+/* ==========================================================
+   🚀 PART D 优化: 大纲侧边栏 (Sidebar Outline View) 
+   【无 !important 版】：使用高特异性选择器覆盖主题样式
+   ========================================================== */
+
 .outline-row {
-    display: flex; align-items: flex-start; padding: 4px 8px; margin: 1px 8px;
+    display: flex; align-items: flex-start; padding: 4px 8px 4px 28px; margin: 1px 8px;
     cursor: pointer; color: var(--text-muted); font-size: var(--font-ui-small);
-    line-height: 1.5; border-radius: 6px; transition: background-color 0.15s ease;
+    line-height: 1.5; border-radius: 6px; 
+    transition: background-color 0.3s ease, transform 0.15s ease;
     user-select: none; gap: 4px;
+    position: relative; 
 }
-.outline-row:hover { background-color: var(--background-modifier-hover); }
-.outline-row.is-active-parent { background-color: rgba(var(--text-accent-rgb), 0.05); }
+.outline-row:hover { background-color: var(--background-modifier-hover); transform: translateX(2px); }
+
+.outline-row.is-active-parent { 
+    background-color: rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.05); 
+}
 
 .outline-caret {
-    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
-    margin-top: 2px; flex-shrink: 0; opacity: 0.3; transition: transform 0.2s ease, opacity 0.2s ease;
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    width: var(--sb-caret-size, 18px);
+    height: var(--sb-caret-size, 18px);
+    flex-shrink: 0; 
+    opacity: 0.5; 
+    display: flex; align-items: center; justify-content: center; 
+    margin: 0; 
+    
+    transition: opacity 0.3s ease, color 0.3s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
 }
-.outline-row:hover .outline-caret { opacity: 0.8; }
-.outline-caret.is-collapsed svg { transform: rotate(-90deg); }
-.outline-caret.is-empty { visibility: hidden; pointer-events: none; }
+.outline-caret svg { width: var(--sb-caret-size, 18px); height: var(--sb-caret-size, 18px); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+.outline-caret.is-collapsed {
+    transform: translateY(-50%) rotate(-90deg);
+}
+
+.outline-row:hover .outline-caret svg {
+    transform: scale(1.1);
+}
+
+.outline-row.is-active {
+    background-color: rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.15);
+    border-radius: 8px;
+    box-shadow: none; 
+}
+.outline-row.is-active .outline-caret {
+    opacity: 1;
+    color: var(--my-glow-color, #007aff);
+    filter: drop-shadow(0 0 3px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.4));
+}
+.outline-row.is-active .outline-bullet {
+    background-color: var(--my-glow-color, #007aff);
+    box-shadow: 0 0 6px 1px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.6);
+    opacity: 1; 
+}
+
+/* 【等效替换：去掉了!important，改用超高特异性选择器保证文本必亮】 */
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-text,
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-text * {
+    color: var(--my-glow-color, #007aff);
+    text-shadow: 0 0 5px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.4);
+}
+
+.outline-row.is-active .outline-task-checkbox {
+    border-color: var(--my-glow-color, #007aff);
+    box-shadow: 0 0 6px 1px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.6);
+    border-width: 1.5px;
+    opacity: 1; 
+}
+.outline-row.is-active .outline-task-checkbox:checked::after {
+    border-color: var(--my-glow-color, #007aff);
+}
+
 .outline-children { margin-left: 20px; border-left: 1px solid var(--background-modifier-border); padding-left: 4px; }
 .outline-children.is-hidden { display: none; }
-.outline-text { flex-grow: 1; word-break: break-all; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-.outline-text .internal-link { text-decoration: none; color: var(--text-accent); }
-.outline-badge {
-    color: var(--text-faint); font-size: 0.75em; padding: 0 6px; margin-left: 8px; align-self: center;
-    flex-shrink: 0; border-radius: 10px; border: 1px solid var(--background-modifier-border);
-}
+.outline-text { flex-grow: 0; word-break: break-all; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.outline-badge { margin-left: auto; color: var(--text-faint); font-size: 0.75em; padding: 0 6px; align-self: center; flex-shrink: 0; border-radius: 10px; border: 1px solid var(--background-modifier-border); }
 
-/* 侧边栏所有模式的高亮发光态穿透引擎 (增加选择器权重) */
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active { 
-    background-color: var(--background-modifier-hover); 
-}
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .heading-text,
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-text,
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-text * { 
-    color: var(--my-glow-color); 
-    text-shadow: 0 0 5px rgba(var(--my-glow-color), 0.3); 
-}
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.is-active .outline-bullet { 
-    background-color: var(--my-glow-color); 
-    box-shadow: 0 0 6px 1px rgba(var(--my-glow-color), 0.5); 
-}
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.canvas-row.is-active .canvas-text, 
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.canvas-row.is-active .canvas-icon { 
-    color: var(--my-glow-color); 
-}
-
-/* 侧边栏标题大纲排版 */
-.outline-row.heading-row .outline-bullet { display: none; }
-.heading-level-1 .heading-text { font-size: var(--h1, 1.6em); font-weight: var(--h1-weight, 700); color: var(--text-title-h1); }
-.heading-level-2 .heading-text { font-size: var(--h2, 1.35em); font-weight: var(--h2-weight, 600); color: var(--text-title-h2); }
-.heading-level-3 .heading-text { font-size: var(--h3, 1.2em); font-weight: var(--h3-weight, 600); color: var(--text-title-h3); }
-.heading-level-4 .heading-text, .heading-level-5 .heading-text, .heading-level-6 .heading-text { font-size: var(--font-ui-smaller); font-weight: 500; color: var(--text-faint); }
-
-/* 侧边栏白板大纲排版 */
-.outline-row.canvas-row { align-items: center; padding: 6px 8px; }
-.canvas-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-right: 4px; color: var(--text-muted); flex-shrink: 0; }
-.canvas-icon svg { width: 14px; height: 14px; stroke-width: 2px; }
-.outline-text.canvas-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-normal); }
-
-/* 依靠 JS 增加的 .is-canvas-group 标记实现加粗 */
-.outline-row.canvas-row.is-canvas-group .canvas-text { font-weight: 600; color: var(--text-accent); }
-
-/* 侧边栏列表大纲排版 (增加选择器权重) */
-.outline-bullet { width: 0.45em; height: 0.45em; border-radius: 50%; background-color: var(--text-faint); margin-right: 8px; margin-top: 0.55em; flex-shrink: 0; transition: all 0.2s ease; }
-
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.list-heading-depth-1 .outline-text, 
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.list-heading-depth-1 .outline-text * { 
-    font-size: var(--h1, 1.6em); font-weight: var(--h1-weight, 700); color: var(--text-title-h1); line-height: 1.3; 
-}
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.list-heading-depth-2 .outline-text, 
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.list-heading-depth-2 .outline-text * { 
-    font-size: var(--h2, 1.35em); font-weight: var(--h2-weight, 600); color: var(--text-title-h2); line-height: 1.35; 
-}
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.list-heading-depth-3 .outline-text, 
-div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.list-heading-depth-3 .outline-text * { 
-    font-size: var(--h3, 1.2em); font-weight: var(--h3-weight, 600); color: var(--text-title-h3); line-height: 1.4; 
+.outline-bullet { 
+    width: var(--sb-bullet-size, 0.45em); 
+    height: var(--sb-bullet-size, 0.45em); 
+    border-radius: 50%; background-color: var(--text-faint); flex-shrink: 0; 
+    margin-left: var(--sb-bullet-margin-left, 0.475em); 
+    margin-right: var(--sb-bullet-margin-right, 0.875em); 
+    margin-top: 0.55em; 
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; 
 }
 
 /* ==========================================================
-   PART B: Markdown 编辑器正文内部的无序列表标题化排版
-   (恢复了 :has() 选择器，以实现仅包含子节点时才渲染为标题样式的视觉交互)
+   PART B: 正文列表 1-6 级等比标题化 
    ========================================================== */
-body .list-outline-mode .cm-line.HyperMD-list-line, 
-body .list-outline-mode .markdown-rendered ul li {
-  transition: font-size 0.2s ease, font-weight 0.2s ease, color 0.2s ease;
-}
+body .list-outline-mode .cm-line.HyperMD-list-line-1:has(+ .cm-line.HyperMD-list-line-2) > span:not(.cm-formatting):not(.cm-hmd-list-indent), body .list-outline-mode .cm-line.HyperMD-list-line-1:has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) { font-size: var(--h1, 1.6em); font-weight: var(--h1-weight, 700); color: var(--h1-color, var(--text-title-h1)); }
+body .list-outline-mode .cm-line.HyperMD-list-line-1:has(+ .cm-line.HyperMD-list-line-2) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-1:has(.cm-foldPlaceholder) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-1:has(+ .cm-line.HyperMD-list-line-2) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-1:has(.cm-foldPlaceholder) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-1:has(+ .cm-line.HyperMD-list-line-2) .cm-fold-indicator, body .list-outline-mode .cm-line.HyperMD-list-line-1:has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h1, 1.6em); }
 
-body .list-outline-mode .cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-2) > span:not(.cm-formatting):not(.cm-hmd-list-indent),
-body .list-outline-mode .cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
-  font-size: var(--h1, 1.6em); font-weight: var(--h1-weight, 700); color: var(--h1-color, var(--text-title-h1));
-}
-body .list-outline-mode .cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-2) .list-bullet,
-body .list-outline-mode .cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .list-bullet,
-body .list-outline-mode .cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-2) .cm-fold-indicator,
-body .list-outline-mode .cm-line.HyperMD-list-line-1:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h1, 1.6em); }
+body .list-outline-mode .cm-line.HyperMD-list-line-2:has(+ .cm-line.HyperMD-list-line-3) > span:not(.cm-formatting):not(.cm-hmd-list-indent), body .list-outline-mode .cm-line.HyperMD-list-line-2:has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) { font-size: var(--h2, 1.35em); font-weight: var(--h2-weight, 700); color: var(--h2-color, var(--text-title-h2)); }
+body .list-outline-mode .cm-line.HyperMD-list-line-2:has(+ .cm-line.HyperMD-list-line-3) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-2:has(.cm-foldPlaceholder) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-2:has(+ .cm-line.HyperMD-list-line-3) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-2:has(.cm-foldPlaceholder) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-2:has(+ .cm-line.HyperMD-list-line-3) .cm-fold-indicator, body .list-outline-mode .cm-line.HyperMD-list-line-2:has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h2, 1.35em); }
 
-body .list-outline-mode .cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-3) > span:not(.cm-formatting):not(.cm-hmd-list-indent),
-body .list-outline-mode .cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
-  font-size: var(--h2, 1.35em); font-weight: var(--h2-weight, 700); color: var(--h2-color, var(--text-title-h2));
-}
-body .list-outline-mode .cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-3) .list-bullet,
-body .list-outline-mode .cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .list-bullet,
-body .list-outline-mode .cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-3) .cm-fold-indicator,
-body .list-outline-mode .cm-line.HyperMD-list-line-2:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h2, 1.35em); }
+body .list-outline-mode .cm-line.HyperMD-list-line-3:has(+ .cm-line.HyperMD-list-line-4) > span:not(.cm-formatting):not(.cm-hmd-list-indent), body .list-outline-mode .cm-line.HyperMD-list-line-3:has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) { font-size: var(--h3, 1.2em); font-weight: var(--h3-weight, 600); color: var(--h3-color, var(--text-title-h3)); }
+body .list-outline-mode .cm-line.HyperMD-list-line-3:has(+ .cm-line.HyperMD-list-line-4) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-3:has(.cm-foldPlaceholder) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-3:has(+ .cm-line.HyperMD-list-line-4) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-3:has(.cm-foldPlaceholder) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-3:has(+ .cm-line.HyperMD-list-line-4) .cm-fold-indicator, body .list-outline-mode .cm-line.HyperMD-list-line-3:has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h3, 1.2em); }
 
-body .list-outline-mode .cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-4) > span:not(.cm-formatting):not(.cm-hmd-list-indent),
-body .list-outline-mode .cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
-  font-size: var(--h3, 1.2em); font-weight: var(--h3-weight, 600); color: var(--h3-color, var(--text-title-h3));
-}
-body .list-outline-mode .cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-4) .list-bullet,
-body .list-outline-mode .cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .list-bullet,
-body .list-outline-mode .cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(+ .cm-line.HyperMD-list-line-4) .cm-fold-indicator,
-body .list-outline-mode .cm-line.HyperMD-list-line-3:not(.HyperMD-task-line):has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h3, 1.2em); }
+body .list-outline-mode .cm-line.HyperMD-list-line-4:has(+ .cm-line.HyperMD-list-line-5) > span:not(.cm-formatting):not(.cm-hmd-list-indent), body .list-outline-mode .cm-line.HyperMD-list-line-4:has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) { font-size: var(--h4, 1.1em); font-weight: var(--h4-weight, 600); color: var(--h4-color, var(--text-title-h4)); }
+body .list-outline-mode .cm-line.HyperMD-list-line-4:has(+ .cm-line.HyperMD-list-line-5) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-4:has(.cm-foldPlaceholder) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-4:has(+ .cm-line.HyperMD-list-line-5) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-4:has(.cm-foldPlaceholder) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-4:has(+ .cm-line.HyperMD-list-line-5) .cm-fold-indicator, body .list-outline-mode .cm-line.HyperMD-list-line-4:has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h4, 1.1em); }
+
+body .list-outline-mode .cm-line.HyperMD-list-line-5:has(+ .cm-line.HyperMD-list-line-6) > span:not(.cm-formatting):not(.cm-hmd-list-indent), body .list-outline-mode .cm-line.HyperMD-list-line-5:has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) { font-size: var(--h5, 1.0em); font-weight: var(--h5-weight, 500); color: var(--h5-color, var(--text-title-h5)); }
+body .list-outline-mode .cm-line.HyperMD-list-line-5:has(+ .cm-line.HyperMD-list-line-6) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-5:has(.cm-foldPlaceholder) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-5:has(+ .cm-line.HyperMD-list-line-6) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-5:has(.cm-foldPlaceholder) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-5:has(+ .cm-line.HyperMD-list-line-6) .cm-fold-indicator, body .list-outline-mode .cm-line.HyperMD-list-line-5:has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h5, 1.0em); }
+
+body .list-outline-mode .cm-line.HyperMD-list-line-6:has(+ .cm-line.HyperMD-list-line-7) > span:not(.cm-formatting):not(.cm-hmd-list-indent), body .list-outline-mode .cm-line.HyperMD-list-line-6:has(.cm-foldPlaceholder) > span:not(.cm-formatting):not(.cm-hmd-list-indent) { font-size: var(--h6, 0.95em); font-weight: var(--h6-weight, 500); color: var(--h6-color, var(--text-title-h6)); opacity: 0.8; }
+body .list-outline-mode .cm-line.HyperMD-list-line-6:has(+ .cm-line.HyperMD-list-line-7) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-6:has(.cm-foldPlaceholder) .list-bullet, body .list-outline-mode .cm-line.HyperMD-list-line-6:has(+ .cm-line.HyperMD-list-line-7) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-6:has(.cm-foldPlaceholder) input[type="checkbox"].task-list-item-checkbox, body .list-outline-mode .cm-line.HyperMD-list-line-6:has(+ .cm-line.HyperMD-list-line-7) .cm-fold-indicator, body .list-outline-mode .cm-line.HyperMD-list-line-6:has(.cm-foldPlaceholder) .cm-fold-indicator { font-size: var(--h6, 0.95em); }
+
 
 /* ==========================================================
-   PART C: Markdown 编辑器正文内部列表圆点绝对居中引擎
+   🚀 PART C: 数学级中心锚定架构 
+   【完全回归 Obsidian 原生】
    ========================================================== */
-body .markdown-source-view.mod-cm6.list-outline-mode .cm-line .list-bullet {
+
+/* --------------------------------------------------------
+   区域 1：【正文】折叠三角 (完全原生，无任何干预)
+   -------------------------------------------------------- */
+
+/* --------------------------------------------------------
+   区域 2：【正文】无序列表圆点 
+   -------------------------------------------------------- */
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line .list-bullet {
     color: transparent; background: transparent; position: relative;
-    display: inline-block; width: 1em; height: 1em; margin-left: 11.1px;
+    display: inline-block; 
+    width: 0.5em; 
+    margin-left: 3.2px; 
 }
-body .markdown-source-view.mod-cm6.list-outline-mode .cm-line .list-bullet::after {
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line .list-bullet::after {
     content: ""; display: block; position: absolute;
-    left: 50%; top: 75%; transform: translate(-50%, -50%); 
-    width: 0.45em; height: 0.45em; border-radius: 50%; 
-    background-color: var(--text-faint); border: none;
+    left: 0%; top: 50%; transform: translate(-50%, -50%); 
+    width: 0.45em; height: 0.45em; 
+    border-radius: 50%; background-color: var(--text-faint); border: none;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
-body .markdown-source-view.mod-cm6.list-outline-mode .cm-line .cm-fold-indicator {
-    position: absolute; display: inline-flex; margin-left: 0.4em; 
-    margin-top: 1px; width: auto; padding: 0; opacity: 0.3;
-    transition: opacity 0.2s ease, transform 0.2s ease; transform: translateX(11.1px);
+
+/* --------------------------------------------------------
+   区域 3：【正文】待办事项 (复选框) 
+   -------------------------------------------------------- */
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.HyperMD-task-line .list-bullet { 
+    display: none; 
 }
-body .markdown-source-view.mod-cm6.list-outline-mode .cm-line .cm-fold-indicator:hover {
-    opacity: 1; transform: translateX(11.1px) scale(1.1);
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.HyperMD-task-line input[type="checkbox"].task-list-item-checkbox,
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.HyperMD-task-line input[type="checkbox"].task-list-item-checkbox:checked {
+    position: relative; 
+    margin-left: 3.2px; 
+    transform: translateX(50%); 
+    margin-right: 10px; 
+    vertical-align: middle; top: -0.05em; 
+    appearance: none; -webkit-appearance: none;
+    width: 0.8em; height: 0.8em; 
+    border: 1.5px solid var(--text-muted); border-radius: 4px;
+    cursor: pointer; background-color: transparent;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.HyperMD-task-line > span:not(.cm-formatting):not(.cm-hmd-list-indent) {
+    padding-left: 0px; 
+}
+
+
+/* ==========================================================
+   PART D 剩余部分: 侧边栏待办事项 完美对勾
+   ========================================================== */
+html body .app-container .workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox {
+    appearance: none; -webkit-appearance: none; flex-shrink: 0; 
+    width: var(--sb-checkbox-size, 0.8em); 
+    height: var(--sb-checkbox-size, 0.8em); 
+    border: 1.5px solid var(--text-muted); border-radius: 4px; 
+    cursor: pointer; background-color: transparent;
+    background-image: none; -webkit-mask-image: none;
+    
+    margin-left: var(--sb-checkbox-margin-left, 0.3em); 
+    margin-right: var(--sb-checkbox-margin-right, 0.7em); 
+    position: relative; top: 0.4em; 
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease; 
+}
+
+html body .app-container .workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:checked {
+    background-color: transparent;
+    border-color: var(--text-faint); 
+    box-shadow: none;
+}
+
+html body .app-container .workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:checked::after { 
+    content: ""; 
+    display: block; 
+    position: absolute; 
+    top: 10%; 
+    left: 25%; 
+    width: 50%; 
+    height: 65%; 
+    border: solid var(--text-faint); 
+    border-width: 0 0.12em 0.12em 0; 
+    transform: rotate(45deg); 
+    background-color: transparent; 
+    -webkit-mask-image: none; 
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
 }
 
 /* ==========================================================
-   PART D: Markdown 编辑器正文内部：当前行光标圆点发光！
+   PART E: 发光修复 (完全移除了 !important)
    ========================================================== */
-body .markdown-source-view.mod-cm6.list-outline-mode .cm-line.cm-active .list-bullet::after {
-    background-color: var(--my-glow-color); box-shadow: var(--my-glow-shadow); 
+div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active { background-color: var(--background-modifier-hover); }
+
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .heading-text, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-text, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-text * { 
+    color: var(--my-glow-color, #007aff); 
+    text-shadow: 0 0 5px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.4); 
 }
-body .list-outline-mode .cm-active ~ .cm-gutter-fold .cm-fold-indicator svg,
-body .list-outline-mode .cm-line.cm-active .collapse-indicator svg,
-body .list-outline-mode .cm-line.cm-active .cm-fold-indicator svg {
-    color: var(--my-glow-color); fill: var(--my-glow-color);
-    filter: drop-shadow(var(--my-glow-shadow)); opacity: 1; 
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.cm-active .list-bullet::after, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.list-row.is-active .outline-bullet { 
+    background-color: var(--my-glow-color, #007aff); 
+    box-shadow: 0 0 6px 1px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.6); 
+    border: none;
+    opacity: 1; 
+}
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.cm-active.HyperMD-task-line input[type="checkbox"].task-list-item-checkbox, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-active .outline-task-checkbox { 
+    border-color: var(--my-glow-color, #007aff); 
+    box-shadow: 0 0 6px 1px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.6); 
+    border-width: 1.5px;
+    opacity: 1; 
+}
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode input[type="checkbox"].task-list-item-checkbox:hover, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:hover { 
+    border-color: var(--text-normal); transform: scale(1.08) translateX(-45%) translateY(-1px); 
+}
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line:not(.cm-active) input[type="checkbox"].task-list-item-checkbox:checked, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row:not(.is-active) .outline-task-checkbox:checked { 
+    background-color: transparent; border-color: var(--text-faint); box-shadow: none; opacity: 0.6; 
+}
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode input[type="checkbox"].task-list-item-checkbox:checked::after, 
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row .outline-task-checkbox:checked::after { 
+    content: ""; display: block; position: absolute; top: 10%; left: 25%; width: 50%; height: 65%; 
+    border: solid var(--text-faint); border-width: 0 0.12em 0.12em 0; transform: rotate(45deg); background-color: transparent; -webkit-mask-image: none; box-sizing: border-box;
+}
+
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.HyperMD-task-line[data-task]:not([data-task=" "]) { text-decoration: none; color: var(--text-muted); }
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.HyperMD-task-line[data-task]:not([data-task=" "]) > span:not(.cm-formatting):not(.cm-hmd-list-indent):not(.list-bullet):not(.cm-fold-indicator) { 
+    background-image: linear-gradient(to bottom, transparent 48%, var(--text-muted) 48%, var(--text-muted) 52%, transparent 52%); 
+    background-size: 100% 100%; background-repeat: no-repeat; background-position: center; color: var(--text-muted); opacity: 0.65; 
+}
+html body .app-container .workspace-leaf-content div.workspace-leaf-content[data-type="unified-outline-view"] .outline-row.is-completed .outline-text { 
+    text-decoration: none; background-image: linear-gradient(to bottom, transparent 48%, var(--text-muted) 48%, var(--text-muted) 52%, transparent 52%); 
+    background-size: 100% 100%; background-repeat: no-repeat; background-position: center; color: var(--text-muted); opacity: 0.65; 
+}
+
+/* ==========================================================
+   PART F: 非列表文本沉浸式指示条
+   ========================================================== */
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.cm-active:not(.HyperMD-list-line) { 
+    position: relative; background-color: rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.05); border-radius: 4px; 
+}
+html body .app-container .workspace-leaf-content .markdown-source-view.mod-cm6.list-outline-mode .cm-line.cm-active:not(.HyperMD-list-line)::before {
+    content: ""; position: absolute; left: -14px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px;
+    background-color: var(--my-glow-color, #007aff); box-shadow: 0 0 6px rgba(var(--my-glow-color-rgb, 0, 122, 255), 0.5); z-index: 1;
 }
